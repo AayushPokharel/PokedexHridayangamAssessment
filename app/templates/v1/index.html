@@ -1,0 +1,145 @@
+{% extends "_base.html" %} {% block title %}Index{% endblock %} {% block content
+%}
+<h1 class="text-7xl font-bold text-center">Pokedex</h1>
+<input
+  type="text"
+  id="searchInput"
+  placeholder="Search by name"
+  class="w-[50%] p-2 my-4 ml-[25%] text-center rounded-md"
+/>
+<div class=" m-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-9 gap-4">
+    {% for type in pokemon_type_colors %}
+    <div class="flex items-center border border-gray-300 rounded-md p-2">
+        <input
+            type="checkbox"
+            id="{{ type }}"
+            name="{{ type }}"
+            value="{{ type }}"
+            class="checkbox checkbox-[gray-300]"
+        />
+        <label for="{{ type }}" class="ml-1 text-center">{{ type }}</label>
+    </div>
+    {% endfor %}
+</div>
+</div>
+<div
+  class="grid grid-cols-1 mx-4 md:grid-cols-2 mx-4 lg:grid-cols-3 gap-4 mx-4"
+>
+    {% for pokemon in pokemons %}
+    <div class="bg-white shadow-md rounded-lg p-4">
+        <img
+            src="{{ pokemon.sprite }}"
+            alt="{{ pokemon.name }}"
+            class="w-32 h-32 mx-auto"
+        />
+        <h2 class="text-xl font-bold text-center">
+            {{ pokemon.name | replace('-',' ') | capitalize }}
+        </h2>
+        <p class="text-center">
+            {% for type in pokemon.type %}
+            <span
+                class="text-white p-1 rounded-sm bg-[{{ pokemon_type_colors[type] }}] pokemon-type"
+                >{{ type }}</span
+            >
+            {% endfor %}
+        </p>
+    </div>
+
+    {% endfor %}
+</div>
+
+<script>
+
+/**
+ * Retrieves the URL parameters for the current page.
+ * @returns {Object} An object containing the search value and selected types.
+ */
+function getURLParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchValue = urlParams.get("name") || "";
+    const selectedTypes = urlParams.get("type") ? urlParams.get("type").split(",") : [];
+    return { searchValue, selectedTypes };
+}
+
+/**
+ * Updates the URL parameters with the given search value and selected types.
+ * @param {string} searchValue - The search value to be updated in the URL.
+ * @param {string[]} selectedTypes - The selected types to be updated in the URL.
+ */
+function updateURLParams(searchValue, selectedTypes) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set("name", searchValue);
+    urlParams.set("type", selectedTypes.join(","));
+    window.history.replaceState({}, "", `${location.pathname}?${urlParams}`);
+}
+
+/**
+ * Updates the display of Pokemon cards based on the search value and selected types.
+ * @param {string} searchValue - The value to search for in the Pokemon names.
+ * @param {string[]} selectedTypes - An array of selected Pokemon types.
+ * @returns {void}
+ */
+function updateDisplay(searchValue, selectedTypes) {
+    const pokemonCards = document.querySelectorAll(".bg-white");
+    pokemonCards.forEach(function (card) {
+        const pokemonName = card.querySelector("h2").textContent.toLowerCase();
+        const pokemonTypes = Array.from(card.querySelectorAll(".pokemon-type")).map(type => type.textContent.toLowerCase()); // Get all the pokemon types for the card
+
+        if (pokemonName.includes(searchValue) && selectedTypes.every(type => pokemonTypes.includes(type))) {
+                card.style.display = "block";
+        } else {
+                card.style.display = "none";
+        }
+    });
+}
+
+/**
+ * Updates the display based on the URL parameters.
+ */
+function updateDisplayBasedOnURL() {
+    const { searchValue, selectedTypes } = getURLParams();
+    updateDisplay(searchValue, selectedTypes);
+}
+
+/**
+ * initialize display based on URL parameters
+ */
+const { searchValue, selectedTypes } = getURLParams();
+updateDisplay(searchValue, selectedTypes);
+
+/**
+ * Update display when search input changes
+ */
+document.getElementById("searchInput").addEventListener("input", function () {
+    const searchValue = this.value.toLowerCase();
+    const selectedTypes = Array.from(document.querySelectorAll('input[type="checkbox"]'))
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+    updateURLParams(searchValue, selectedTypes);
+    updateDisplay(searchValue, selectedTypes);
+});
+
+/**
+ * Update display when checkboxes change
+ */
+document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener("change", function() {
+        const searchValue = document.getElementById("searchInput").value.toLowerCase();
+        const selectedTypes = Array.from(document.querySelectorAll('input[type="checkbox"]'))
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+        updateURLParams(searchValue, selectedTypes);
+        updateDisplay(searchValue, selectedTypes);
+    });
+});
+
+/**
+ * Update display based on URL parameters when the page loads or URL changes
+ */
+window.addEventListener("load", updateDisplayBasedOnURL);
+window.addEventListener("popstate", updateDisplayBasedOnURL);
+</script>
+
+{% endblock %}
